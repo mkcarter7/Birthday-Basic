@@ -41,6 +41,8 @@ class CreateCheckoutSessionView(APIView):
     def post(self, request):
         party_id = request.data.get('party_id')
         tier = request.data.get('tier')
+        template_id = request.data.get('template_id', 'classic')
+        subdomain = request.data.get('subdomain', '').strip().lower()
 
         if tier not in TIER_PRICES:
             return Response(
@@ -55,6 +57,16 @@ class CreateCheckoutSessionView(APIView):
                 {'error': 'Party not found or you are not the host.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        # Set subdomain if provided and not already claimed
+        if subdomain and not party.subdomain:
+            if Party.objects.filter(subdomain=subdomain).exclude(id=party.id).exists():
+                return Response(
+                    {'error': 'That subdomain is already taken. Please choose another.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            party.subdomain = subdomain
+            party.save(update_fields=['subdomain'])
 
         # Prevent double-purchasing
         if hasattr(party, 'subscription') and party.subscription.status == 'active':
@@ -79,6 +91,7 @@ class CreateCheckoutSessionView(APIView):
                 'party_id': str(party.id),
                 'tier': tier,
                 'user_id': str(request.user.id),
+                'template_id': template_id,
             },
         }
 
@@ -176,4 +189,8 @@ class StripeWebhookView(APIView):
         set_party_expiry(sub.party)
 
         # Ensure a SiteConfig exists with sensible defaults
-        SiteConfig.objects.get_or_create(party=sub.party)
+        template_id = session.get('metadata', {}).get('template_id', 'classic')
+        SiteConfig.objects.get_or_create(
+            party=sub.party,
+            defaults={'template_id': template_id},
+        )

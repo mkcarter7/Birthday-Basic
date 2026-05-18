@@ -1,15 +1,14 @@
 import { Inter, Fredoka } from 'next/font/google';
 import PropTypes from 'prop-types';
-import ClientProvider from '@/utils/context/ClientProvider';
-import { PARTY_CONFIG } from '@/config/party';
+import { AuthProvider } from '@/utils/context/authContext';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/globals.css';
 import '@/styles/theme.css';
 
 export const metadata = {
-  title: PARTY_CONFIG.name,
-  description: PARTY_CONFIG.welcomeMessage,
+  title: '1RockstarSocial — Event Sites Made Easy',
+  description: 'Create a beautiful, personalized event site in minutes. RSVP tracking, photo sharing, games, and more.',
   icons: {
     icon: '/icon.png',
   },
@@ -24,19 +23,20 @@ export const viewport = {
 
 const inter = Inter({ subsets: ['latin'] });
 export const fredoka = Fredoka({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-fredoka' });
+
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
         className={`${inter.className} ${fredoka.variable}`}
         style={{
-          '--bg-image-url': `url('${PARTY_CONFIG.backgroundImage}')`,
-          '--party-primary': PARTY_CONFIG.primaryColor,
-          '--party-secondary': PARTY_CONFIG.secondaryColor,
-          '--party-accent': PARTY_CONFIG.accentColor,
+          '--bg-image-url': 'none',
+          '--party-primary': '#3B82F6',
+          '--party-secondary': '#8B5CF6',
+          '--party-accent': '#F59E0B',
         }}
       >
-        <ClientProvider>{children}</ClientProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
