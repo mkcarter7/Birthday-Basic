@@ -6,7 +6,8 @@ import { useAuth } from '@/utils/context/authContext';
 import { signIn } from '@/utils/auth';
 import { PARTY_CONFIG } from '@/config/party';
 
-function TriviaGame({ onComplete }) {
+function TriviaGame({ onComplete, partyId }) {
+  const effectivePartyId = partyId || PARTY_CONFIG.id;
   const { user, userLoading } = useAuth();
   const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -29,7 +30,7 @@ function TriviaGame({ onComplete }) {
         setError('');
 
         const token = await user.getIdToken();
-        const res = await fetch(`/api/trivia?party=${PARTY_CONFIG.id}&count=5`, {
+        const res = await fetch(`/api/trivia?party=${effectivePartyId}&count=5`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -104,7 +105,7 @@ function TriviaGame({ onComplete }) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          party: PARTY_CONFIG.id,
+          party: effectivePartyId,
           answers: finalAnswers,
         }),
       });
@@ -303,6 +304,7 @@ function TriviaGame({ onComplete }) {
 
 TriviaGame.propTypes = {
   onComplete: PropTypes.func.isRequired,
+  partyId: PropTypes.string,
 };
 
 export default TriviaGame;

@@ -1,0 +1,234 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import confetti from 'canvas-confetti';
+import PhotoCarousel from '@/components/PhotoCarousel';
+import { useParty } from '@/utils/context/partyContext';
+
+const parsePartyDateTime = (date, time) => {
+  if (!date) return null;
+  const dateOnly = new Date(date);
+  if (Number.isNaN(dateOnly.getTime())) return null;
+
+  if (!time) {
+    dateOnly.setHours(0, 0, 0, 0);
+    return dateOnly;
+  }
+
+  const trimmed = time.trim();
+  if (!trimmed) return dateOnly;
+
+  const meridiemMatch = trimmed.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (meridiemMatch) {
+    let hours = parseInt(meridiemMatch[1], 10);
+    const minutes = meridiemMatch[2] ? parseInt(meridiemMatch[2], 10) : 0;
+    const meridiem = meridiemMatch[3].toUpperCase();
+    if (hours === 12) {
+      hours = meridiem === 'AM' ? 0 : 12;
+    } else if (meridiem === 'PM') {
+      hours += 12;
+    }
+    dateOnly.setHours(hours, minutes, 0, 0);
+    return dateOnly;
+  }
+
+  const numericMatch = trimmed.match(/(\d{1,2})(?::(\d{2}))?/);
+  if (numericMatch) {
+    const hours = parseInt(numericMatch[1], 10);
+    const minutes = numericMatch[2] ? parseInt(numericMatch[2], 10) : 0;
+    dateOnly.setHours(hours, minutes, 0, 0);
+  }
+  return dateOnly;
+};
+
+function getWeatherIcon(desc) {
+  const d = desc.toLowerCase();
+  if (d.includes('storm') || d.includes('thunder')) return '⛈️';
+  if (d.includes('rain') || d.includes('shower')) return '🌧️';
+  if (d.includes('drizzle')) return '🌦️';
+  if (d.includes('snow') || d.includes('sleet')) return '❄️';
+  if (d.includes('fog') || d.includes('mist')) return '🌫️';
+  if (d.includes('partly cloudy') || d.includes('partly cloud')) return '⛅';
+  if (d.includes('cloud') || d.includes('overcast')) return '☁️';
+  if (d.includes('clear') || d.includes('sunny')) return '☀️';
+  if (d.includes('wind')) return '💨';
+  return '🌤️';
+}
+
+const WEATHER_CODES = {
+  0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
+  45: 'Fog', 48: 'Freezing fog', 51: 'Light drizzle', 53: 'Moderate drizzle',
+  55: 'Dense drizzle', 61: 'Light rain', 63: 'Moderate rain', 65: 'Heavy rain',
+  80: 'Rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+  95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Heavy thunderstorm with hail',
+};
+
+const tiles = [
+  { href: 'calendar', label: 'Add to Calendar', color: 'green', icon: '📅' },
+  { href: 'sms', label: 'Share via SMS', color: 'blue', icon: '📞' },
+  { href: 'qrcode', label: 'QR Code', color: 'purple', icon: '📱' },
+  { href: 'live', label: 'Watch Live', color: 'blue', icon: '🔗' },
+  { href: 'photos', label: 'Photos', color: 'pink', icon: '📷' },
+  { href: 'gift', label: 'Send Gift', color: 'violet', icon: '🎁' },
+  { href: 'registry', label: 'Registry', color: 'indigo', icon: '⭐' },
+  { href: 'guestbook', label: 'Guest Book', color: 'teal', icon: '💬' },
+  { href: 'timeline', label: 'Timeline', color: 'orange', icon: '🕑' },
+  { href: 'location', label: 'Location', color: 'emerald', icon: '📍' },
+  { href: 'games', label: 'Play Games & Earn Points', color: 'gold', icon: '🏆' },
+  { href: 'rsvp', label: 'RSVP for Party', color: 'rose', icon: '👥' },
+];
+
+export default function EventHome() {
+  const config = useParty();
+
+  const [countdown, setCountdown] = useState({
+    headline: 'Loading party details…',
+    subline: 'Hang tight while we calculate the countdown.',
+  });
+  const [weather, setWeather] = useState({ desc: 'Loading forecast…', temp: '—', icon: '🌤️' });
+
+  const partyDateString = config.date;
+  const partyTimeString = config.time;
+  const partyLatitude = parseFloat(config.latitude);
+  const partyLongitude = parseFloat(config.longitude);
+
+  const partyDateTime = useMemo(
+    () => parsePartyDateTime(partyDateString, partyTimeString),
+    [partyDateString, partyTimeString],
+  );
+
+  useEffect(() => {
+    let intervalId;
+    if (!partyDateTime) {
+      setCountdown({ headline: 'Let's party soon!', subline: 'Update the party date to see the countdown.' });
+    } else {
+      const updateCountdown = () => {
+        const now = new Date();
+        const diffMs = partyDateTime.getTime() - now.getTime();
+        const hourMs = 60 * 60 * 1000;
+        const dayMs = 24 * hourMs;
+        let next;
+        if (Number.isNaN(diffMs)) {
+          next = { headline: 'Party date coming soon', subline: 'We could not read the date/time.' };
+        } else if (diffMs <= -6 * hourMs) {
+          next = { headline: '🎉 Thanks for celebrating!', subline: 'Relive the highlights in the gallery below.' };
+        } else if (diffMs <= 0) {
+          const elapsedHours = Math.abs(Math.floor(diffMs / hourMs));
+          next = { headline: '🎉 The party is happening right now!', subline: elapsedHours ? `Started about ${elapsedHours} hour${elapsedHours === 1 ? '' : 's'} ago.` : 'Enjoy every moment!' };
+        } else {
+          const daysLeft = Math.max(1, Math.ceil(diffMs / dayMs));
+          const remainingMs = diffMs - (daysLeft - 1) * dayMs;
+          const hours = Math.floor(remainingMs / hourMs);
+          const minutes = Math.floor((remainingMs % hourMs) / (60 * 1000));
+          if (daysLeft > 1) {
+            next = { headline: `${daysLeft} day${daysLeft === 1 ? '' : 's'} to go`, subline: hours > 0 || minutes > 0 ? `Plus ${hours} hour${hours === 1 ? '' : 's'} and ${minutes} minute${minutes === 1 ? '' : 's'}!` : 'We can't wait to celebrate with you!' };
+          } else if (hours > 0) {
+            next = { headline: `${hours} hour${hours === 1 ? '' : 's'} to go`, subline: `${minutes} more minute${minutes === 1 ? '' : 's'} — get excited!` };
+          } else {
+            next = { headline: `${minutes} minute${minutes === 1 ? '' : 's'} to go`, subline: 'Grab your party shoes!' };
+          }
+        }
+        setCountdown(next);
+      };
+      updateCountdown();
+      intervalId = setInterval(updateCountdown, 60 * 1000);
+    }
+    return () => { if (intervalId) clearInterval(intervalId); };
+  }, [partyDateTime]);
+
+  useEffect(() => {
+    const confettiColors = [config.secondaryColor || '#8B5CF6', config.primaryColor || '#3B82F6', config.accentColor || '#F59E0B', '#10B981', '#EC4899', '#FBBF24'];
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+    const rng = (min, max) => Math.random() * (max - min) + min;
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+      if (timeLeft <= 0) { clearInterval(interval); return; }
+      const particleCount = 50 * (timeLeft / duration);
+      confetti({ ...defaults, particleCount, origin: { x: rng(0.1, 0.3), y: Math.random() - 0.2 }, colors: confettiColors });
+      confetti({ ...defaults, particleCount, origin: { x: rng(0.7, 0.9), y: Math.random() - 0.2 }, colors: confettiColors });
+    }, 250);
+    return () => clearInterval(interval);
+  }, [config.primaryColor, config.secondaryColor, config.accentColor]);
+
+  useEffect(() => {
+    const partyInvalid = !partyDateTime || Number.isNaN(partyDateTime.getTime());
+    const coordsInvalid = !Number.isFinite(partyLatitude) || !Number.isFinite(partyLongitude) || Math.abs(partyLatitude) > 90 || Math.abs(partyLongitude) > 180;
+    const diffDays = partyInvalid ? null : (partyDateTime.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+
+    if (partyInvalid || coordsInvalid) { setWeather({ desc: 'Weather forecast unavailable.', temp: '—', icon: '🌤️' }); return undefined; }
+    if (diffDays !== null && diffDays > 16) { setWeather({ desc: 'Forecast becomes available about 16 days before the party.', temp: '—', icon: '🌤️' }); return undefined; }
+
+    const controller = new AbortController();
+    const fetchForecast = async () => {
+      try {
+        const targetDate = partyDateTime.toISOString().split('T')[0];
+        const params = new URLSearchParams({ latitude: partyLatitude, longitude: partyLongitude, daily: 'weathercode,temperature_2m_mean', timezone: 'auto', temperature_unit: 'fahrenheit', start_date: targetDate, end_date: targetDate });
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`, { signal: controller.signal });
+        if (!response.ok) throw new Error('Unable to load forecast');
+        const data = await response.json();
+        const daily = data?.daily;
+        if (!daily || !daily.weathercode?.length) { setWeather({ desc: 'Forecast available closer to party day.', temp: '—', icon: '🌤️' }); return; }
+        const code = daily.weathercode[0];
+        const desc = WEATHER_CODES[code] || 'Great celebration weather';
+        const meanTemp = Number.isFinite(daily.temperature_2m_mean?.[0]) ? Math.round(daily.temperature_2m_mean[0]) : null;
+        setWeather({ desc, temp: meanTemp !== null ? `${meanTemp}°F` : '—', icon: getWeatherIcon(desc) });
+      } catch (err) {
+        if (err.name !== 'AbortError') setWeather({ desc: 'Weather data unavailable right now.', temp: '—', icon: '🌤️' });
+      }
+    };
+    fetchForecast();
+    return () => controller.abort();
+  }, [partyDateTime, partyLatitude, partyLongitude]);
+
+  return (
+    <main className="page">
+      <section className="hero">
+        <h1 className="hero-title">{config.name}</h1>
+        <p className="hero-subtitle">{config.welcomeMessage}</p>
+      </section>
+
+      <section className="info-cards">
+        <div className="info-card"><span className="icn">📅</span><div><div className="info-label">Date</div><div className="info-value">{config.date}</div></div></div>
+        <div className="info-card"><span className="icn">⏰</span><div><div className="info-label">Time</div><div className="info-value">{config.time}</div></div></div>
+        <div className="info-card"><span className="icn">📍</span><div><div className="info-label">Location</div><div className="info-value">{config.venueName || config.location}</div></div></div>
+        {config.theme && <div className="info-card"><span className="icn">⭐</span><div><div className="info-label">Theme</div><div className="info-value">{config.theme}</div></div></div>}
+      </section>
+
+      <section className="countdown-weather-container">
+        <div className="countdown card" style={{ textAlign: 'center' }}>
+          <h2>Party Countdown</h2>
+          <div className="countdown-body" style={{ color: config.primaryColor || '#3B82F6' }}>{countdown.headline}</div>
+          <p className="muted">{countdown.subline}</p>
+        </div>
+        <div className="weather">
+          <div className="weather-card">
+            <div className="weather-icon">{weather.icon}</div>
+            <div className="weather-title">Party Day Weather</div>
+            <div className="weather-temp">{weather.temp}</div>
+            <div className="weather-desc">{weather.desc}</div>
+          </div>
+        </div>
+      </section>
+
+      <section className="tile-grid">
+        {tiles.map((t) => (
+          <Link key={t.href} href={t.href} className={`tile tile-${t.color}`}>
+            <span className="tile-icon" aria-hidden>{t.icon}</span>
+            <span className="tile-label">{t.label}</span>
+          </Link>
+        ))}
+      </section>
+
+      <PhotoCarousel />
+
+      <section className="thanks card" style={{ textAlign: 'center' }}>
+        <h2>{config.thankYouTitle}</h2>
+        <p>{config.thankYouMessage}</p>
+        {config.thankYouSubmessage && <p className="muted">{config.thankYouSubmessage}</p>}
+      </section>
+    </main>
+  );
+}

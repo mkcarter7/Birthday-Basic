@@ -44,8 +44,9 @@ const deriveDisplayName = (record) => {
 const DELETE_BUTTON_COLOR = '#8b5cf6';
 const DELETE_BUTTON_COLOR_HOVER = '#7c3aed';
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ partyId }) {
   const { user, userLoading } = useAuth();
+  const effectivePartyId = partyId || PARTY_CONFIG.id;
   const [stats, setStats] = useState({
     rsvps: { total: 0, yes: 0, maybe: 0, no: 0, totalGuests: 0 },
     guestbook: { total: 0 },
@@ -105,7 +106,7 @@ export default function AdminDashboard() {
           const rsvpRes = await fetch('/api/rsvp', { headers, cache: 'no-store' });
           if (rsvpRes.ok) {
             const rsvpData = await rsvpRes.json();
-            const filtered = Array.isArray(rsvpData) ? rsvpData.filter((r) => String(r.party) === String(PARTY_CONFIG.id)) : [];
+            const filtered = Array.isArray(rsvpData) ? rsvpData.filter((r) => String(r.party) === String(effectivePartyId)) : [];
 
             // Sort by created_at, newest first
             filtered.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
@@ -126,7 +127,7 @@ export default function AdminDashboard() {
           const guestbookRes = await fetch('/api/guestbook', { headers });
           if (guestbookRes.ok) {
             const guestbookData = await guestbookRes.json();
-            const filtered = Array.isArray(guestbookData) ? guestbookData.filter((m) => String(m.party) === String(PARTY_CONFIG.id) && !m.deleted && !m.is_deleted) : [];
+            const filtered = Array.isArray(guestbookData) ? guestbookData.filter((m) => String(m.party) === String(effectivePartyId) && !m.deleted && !m.is_deleted) : [];
 
             // Sort by created_at, newest first
             filtered.sort((a, b) => new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0));
@@ -169,7 +170,7 @@ export default function AdminDashboard() {
 
         // Fetch Game Leaderboard and Stats
         try {
-          const lb = await getLeaderboard(user, PARTY_CONFIG.id);
+          const lb = await getLeaderboard(user, effectivePartyId);
           setLeaderboard(lb);
 
           // Calculate game stats

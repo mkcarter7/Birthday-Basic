@@ -47,6 +47,10 @@ class SiteConfig(models.Model):
     enable_guestbook = models.BooleanField(default=True)
     enable_timeline = models.BooleanField(default=True)
 
+    # Optional overrides for party details shown on the event site
+    venue_name = models.CharField(max_length=300, blank=True)
+    theme = models.CharField(max_length=200, blank=True)
+
     # Custom messaging shown to guests
     welcome_message = models.CharField(
         max_length=500,
@@ -56,6 +60,7 @@ class SiteConfig(models.Model):
     gift_message = models.CharField(max_length=500, blank=True)
     thank_you_title = models.CharField(max_length=200, default='Thank You!')
     thank_you_message = models.TextField(blank=True)
+    thank_you_submessage = models.TextField(blank=True)
 
     # Social / payment links
     venmo_username = models.CharField(max_length=100, blank=True)
