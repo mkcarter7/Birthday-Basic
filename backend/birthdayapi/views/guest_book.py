@@ -125,8 +125,11 @@ class GuestBookEntryViewSet(viewsets.ModelViewSet):
         # Check if user is the author
         is_author = instance.is_author(request.user)
         
-        # Allow deletion if user is admin or author
-        if not (is_admin or is_author):
+        # Party hosts can also delete entries from their own party
+        is_party_host = (instance.party.host_id == request.user.pk)
+
+        # Allow deletion if user is admin, the entry author, or the party host
+        if not (is_admin or is_author or is_party_host):
             return Response(
                 {'detail': 'You do not have permission to perform this action.'},
                 status=status.HTTP_403_FORBIDDEN

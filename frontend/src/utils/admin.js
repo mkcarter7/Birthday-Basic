@@ -30,11 +30,25 @@ export const isAdmin = (user) => {
 };
 
 /**
+ * Check if a user is the host of a specific party.
+ * Use this on event pages instead of isAdmin() — each customer should only
+ * have admin power over their own party, not every party on the platform.
+ *
+ * @param {Object} user       - Firebase user object
+ * @param {string} hostEmail  - The party.host.email value from Django
+ * @returns {boolean}
+ */
+export const isPartyHost = (user, hostEmail) => {
+  if (!user?.email || !hostEmail) return false;
+  return user.email.toLowerCase().trim() === hostEmail.toLowerCase().trim();
+};
+
+/**
  * Hook to check admin status (can be extended to check with backend)
  * @param {Object} user - Firebase user object
  * @returns {Object} - { isAdmin: boolean, checking: boolean }
  */
 export const useAdminStatus = (user) => ({
     isAdmin: isAdmin(user),
-    checking: false, // Can be extended to check with backend if needed
+    checking: false,
   });

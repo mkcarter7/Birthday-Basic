@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/utils/context/authContext';
 import { signIn } from '@/utils/auth';
-import { isAdmin } from '@/utils/admin';
+import { isAdmin, isPartyHost } from '@/utils/admin';
 import { PARTY_CONFIG } from '@/config/party';
 import PropTypes from 'prop-types';
 
@@ -18,7 +18,7 @@ const defaultForm = {
   is_active: true,
 };
 
-export default function TriviaQuestionManager({ cardStyle = {} }) {
+export default function TriviaQuestionManager({ cardStyle = {}, hostEmail }) {
   const { user, userLoading } = useAuth();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,7 @@ export default function TriviaQuestionManager({ cardStyle = {} }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formVersion, setFormVersion] = useState(0);
 
-  const userIsAdmin = isAdmin(user);
+  const userIsAdmin = hostEmail ? isPartyHost(user, hostEmail) : isAdmin(user);
 
   const loadQuestions = useCallback(async () => {
     if (!user || !userIsAdmin) return;

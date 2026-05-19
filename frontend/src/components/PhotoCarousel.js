@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAuth } from '@/utils/context/authContext';
 import { signIn } from '@/utils/auth';
-import { isAdmin } from '@/utils/admin';
+import { isAdmin, isPartyHost } from '@/utils/admin';
 import { photoBelongsToUser } from '@/utils/photos';
 import { PARTY_CONFIG } from '@/config/party';
 
@@ -155,7 +155,7 @@ PhotoCard.defaultProps = {
   deleting: false,
 };
 
-export default function PhotoCarousel({ enableDeletion = false }) {
+export default function PhotoCarousel({ enableDeletion = false, hostEmail }) {
   const { user, userLoading } = useAuth();
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +166,10 @@ export default function PhotoCarousel({ enableDeletion = false }) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
-  const userIsAdmin = useMemo(() => isAdmin(user), [user]);
+  const userIsAdmin = useMemo(
+    () => hostEmail ? isPartyHost(user, hostEmail) : isAdmin(user),
+    [user, hostEmail],
+  );
 
   const handleImageError = (photoId) => {
     setHiddenIds((prev) => {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Navbar, Container, Nav, Button } from 'react-bootstrap';
 import { useParty } from '@/utils/context/partyContext';
 import { useAuth } from '@/utils/context/authContext';
-import { isAdmin } from '@/utils/admin';
+import { isPartyHost } from '@/utils/admin';
 import { signOut } from '@/utils/auth';
 
 /**
@@ -18,7 +18,7 @@ import { signOut } from '@/utils/auth';
 export default function EventNavBar() {
   const config = useParty();
   const { user } = useAuth();
-  const userIsAdmin = isAdmin(user);
+  const userIsAdmin = isPartyHost(user, config.hostEmail);
   const router = useRouter();
 
   return (

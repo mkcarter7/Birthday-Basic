@@ -5,5 +5,5 @@ import { useParty } from '@/utils/context/partyContext';
 
 export default function AdminDashboardPage() {
   const config = useParty();
-  return <AdminDashboard partyId={config.id} />;
+  return <AdminDashboard partyId={config.id} hostEmail={config.hostEmail} />;
 }

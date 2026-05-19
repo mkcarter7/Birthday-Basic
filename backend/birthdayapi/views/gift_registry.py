@@ -2,12 +2,25 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from ..models import GiftRegistryItem, Party
 from rest_framework import serializers
+
+
+class IsGiftRegistryHostOrAdmin(BasePermission):
+    """Only the party host (or staff) may create, update, or delete registry items."""
+    def has_object_permission(self, request, view, obj):
+        if request.user.is_staff:
+            return True
+        return obj.party.host_id == request.user.pk
+
+    def has_permission(self, request, view):
+        # Object-level check handles the real gate; this just ensures authentication.
+        return request.user and request.user.is_authenticated
+
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
@@ -74,7 +87,14 @@ class GiftRegistryStatsSerializer(serializers.Serializer):
 class GiftRegistryItemViewSet(viewsets.ModelViewSet):
     serializer_class = GiftRegistryItemSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    def get_permissions(self):
+        # Anyone authenticated can read the registry.
+        # Only the party host (or staff) can create, edit, or delete items.
+        if self.action in ['list', 'retrieve']:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsGiftRegistryHostOrAdmin()]
+
     def get_queryset(self):
         queryset = GiftRegistryItem.objects.all()
         

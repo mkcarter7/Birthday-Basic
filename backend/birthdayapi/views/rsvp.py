@@ -56,10 +56,17 @@ class RSVPViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = RSVP.objects.all()
-        
-        # SECURITY: Only admins can see all RSVPs
-        # Regular users only see their own RSVPs
-        if not self.request.user.is_staff:
+
+        # Staff see everything. Party hosts see all RSVPs for their own parties.
+        # Regular guests see only their own RSVPs.
+        if self.request.user.is_staff:
+            pass
+        elif Party.objects.filter(host=self.request.user).exists():
+            queryset = queryset.filter(
+                models.Q(user=self.request.user) |
+                models.Q(party__host=self.request.user)
+            )
+        else:
             queryset = queryset.filter(user=self.request.user)
         
         # Filter by party if specified

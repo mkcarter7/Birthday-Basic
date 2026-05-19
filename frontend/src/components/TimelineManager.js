@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useAuth } from '@/utils/context/authContext';
 import { signIn } from '@/utils/auth';
-import { isAdmin } from '@/utils/admin';
+import { isAdmin, isPartyHost } from '@/utils/admin';
 import { PARTY_CONFIG } from '@/config/party';
 import PropTypes from 'prop-types';
 
@@ -35,7 +35,7 @@ const defaultForm = {
 const DELETE_BUTTON_COLOR = '#8b5cf6';
 const DELETE_BUTTON_COLOR_HOVER = '#7c3aed';
 
-export default function TimelineManager({ cardStyle = {} }) {
+export default function TimelineManager({ cardStyle = {}, hostEmail }) {
   const { user, userLoading } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +44,10 @@ export default function TimelineManager({ cardStyle = {} }) {
   const [submitting, setSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
-  const userIsAdmin = useMemo(() => isAdmin(user), [user]);
+  const userIsAdmin = useMemo(
+    () => hostEmail ? isPartyHost(user, hostEmail) : isAdmin(user),
+    [user, hostEmail],
+  );
 
   const loadEvents = useCallback(async () => {
     if (!user || !userIsAdmin) return;

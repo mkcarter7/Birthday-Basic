@@ -101,7 +101,7 @@ export default function EventHome() {
   useEffect(() => {
     let intervalId;
     if (!partyDateTime) {
-      setCountdown({ headline: 'Let's party soon!', subline: 'Update the party date to see the countdown.' });
+      setCountdown({ headline: "Let's party soon!", subline: 'Update the party date to see the countdown.' });
     } else {
       const updateCountdown = () => {
         const now = new Date();
@@ -122,7 +122,7 @@ export default function EventHome() {
           const hours = Math.floor(remainingMs / hourMs);
           const minutes = Math.floor((remainingMs % hourMs) / (60 * 1000));
           if (daysLeft > 1) {
-            next = { headline: `${daysLeft} day${daysLeft === 1 ? '' : 's'} to go`, subline: hours > 0 || minutes > 0 ? `Plus ${hours} hour${hours === 1 ? '' : 's'} and ${minutes} minute${minutes === 1 ? '' : 's'}!` : 'We can't wait to celebrate with you!' };
+            next = { headline: `${daysLeft} day${daysLeft === 1 ? '' : 's'} to go`, subline: hours > 0 || minutes > 0 ? `Plus ${hours} hour${hours === 1 ? '' : 's'} and ${minutes} minute${minutes === 1 ? '' : 's'}!` : "We can't wait to celebrate with you!" };
           } else if (hours > 0) {
             next = { headline: `${hours} hour${hours === 1 ? '' : 's'} to go`, subline: `${minutes} more minute${minutes === 1 ? '' : 's'} — get excited!` };
           } else {
@@ -222,7 +222,7 @@ export default function EventHome() {
         ))}
       </section>
 
-      <PhotoCarousel />
+      <PhotoCarousel hostEmail={config.hostEmail} />
 
       <section className="thanks card" style={{ textAlign: 'center' }}>
         <h2>{config.thankYouTitle}</h2>

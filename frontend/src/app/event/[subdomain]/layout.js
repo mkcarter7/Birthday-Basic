@@ -62,15 +62,34 @@ export async function generateMetadata({ params }) {
 export default async function EventLayout({ children, params }) {
   const raw = await getSiteConfig(params.subdomain);
 
-  // If the subdomain doesn't exist or the party is inactive → show 404.
-  if (!raw || !raw.is_active) {
-    notFound();
+  // Subdomain not found at all → genuine 404.
+  if (!raw) notFound();
+
+  // Party exists but has expired → show a read-only archived banner instead of 404.
+  // Guests who bookmarked the link still land on a meaningful page rather than an error.
+  if (raw.is_expired || raw.site_status === 'expired') {
+    const config = adaptConfig(raw);
+    return (
+      <PartyShell config={config}>
+        <div style={{ textAlign: 'center', padding: '64px 24px', maxWidth: 560, margin: '0 auto' }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>📦</div>
+          <h1 style={{ fontSize: 32, fontWeight: 800, marginBottom: 12 }}>
+            {config.name} — Archived
+          </h1>
+          <p style={{ color: '#555', lineHeight: 1.6, marginBottom: 32 }}>
+            This event wrapped up and the site is now in read-only archive mode.
+            New RSVPs and uploads are closed, but memories live on here.
+          </p>
+          {children}
+        </div>
+      </PartyShell>
+    );
   }
 
-  // Convert the Django snake_case response to the camelCase shape
-  // that PartyContext and all event pages expect.
-  const config = adaptConfig(raw);
+  // Party exists but is otherwise inactive (suspended, pending payment, etc.) → 404.
+  if (!raw.is_active) notFound();
 
+  const config = adaptConfig(raw);
   return (
     <PartyShell config={config}>
       {children}

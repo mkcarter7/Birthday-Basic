@@ -5,7 +5,7 @@ import Link from 'next/link';
 import PageHeader from '@/components/PageHeader';
 import { useAuth } from '@/utils/context/authContext';
 import { signIn } from '@/utils/auth';
-import { isAdmin } from '@/utils/admin';
+import { isAdmin, isPartyHost } from '@/utils/admin';
 import { PARTY_CONFIG } from '@/config/party';
 import { getLeaderboard } from '@/utils/gameScores';
 import TimelineManager from '@/components/TimelineManager';
@@ -44,7 +44,7 @@ const deriveDisplayName = (record) => {
 const DELETE_BUTTON_COLOR = '#8b5cf6';
 const DELETE_BUTTON_COLOR_HOVER = '#7c3aed';
 
-export default function AdminDashboard({ partyId }) {
+export default function AdminDashboard({ partyId, hostEmail }) {
   const { user, userLoading } = useAuth();
   const effectivePartyId = partyId || PARTY_CONFIG.id;
   const [stats, setStats] = useState({
@@ -66,7 +66,9 @@ export default function AdminDashboard({ partyId }) {
   const [photoActionError, setPhotoActionError] = useState('');
   const [photoSuccessMessage, setPhotoSuccessMessage] = useState('');
 
-  const userIsAdmin = isAdmin(user);
+  // If a hostEmail is provided (event page context), check party ownership.
+  // Otherwise fall back to the platform-level admin list (dashboard context).
+  const userIsAdmin = hostEmail ? isPartyHost(user, hostEmail) : isAdmin(user);
 
   const updateRsvpStatsFromList = (list) => {
     const yes = list.filter((r) => r.status === 'yes').length;
@@ -770,9 +772,9 @@ export default function AdminDashboard({ partyId }) {
         )}
       </div>
 
-      <TimelineManager cardStyle={{}} />
+      <TimelineManager cardStyle={{}} hostEmail={hostEmail} />
 
-      <TriviaQuestionManager cardStyle={{}} />
+      <TriviaQuestionManager cardStyle={{}} hostEmail={hostEmail} />
 
       <div className="card" style={{ marginBottom: 16, display: 'grid', gap: 12 }}>
         <h3 style={{ margin: 0 }}>Uploaded Photos ({photos.length})</h3>
