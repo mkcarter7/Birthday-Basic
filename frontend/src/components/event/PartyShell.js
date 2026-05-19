@@ -37,6 +37,11 @@ import EventNavBar from '@/components/event/EventNavBar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '@/styles/globals.css';
 import '@/styles/theme.css';
+import '@/styles/templates/classic.css';
+import '@/styles/templates/modern.css';
+import '@/styles/templates/elegant.css';
+import '@/styles/templates/playful.css';
+import '@/styles/templates/minimalist.css';
 
 function EventViewDirector({ config, children }) {
   const { user, userLoading } = useAuth();
@@ -46,18 +51,18 @@ function EventViewDirector({ config, children }) {
 
     const body = document.body;
 
-    // Choose which background and colors to show based on login state
-    const bgUrl = user
-      ? `url('${config.loggedInBackgroundImage || config.backgroundImage}')`
-      : `url('${config.backgroundImage}')`;
-    const primary = user ? config.loggedInPrimaryColor : config.primaryColor;
-    const secondary = user ? config.loggedInSecondaryColor : config.secondaryColor;
-    const accent = user ? config.loggedInAccentColor : config.accentColor;
+    const applyConfig = (cfg, loggedIn) => {
+      const bgUrl = loggedIn
+        ? `url('${cfg.loggedInBackgroundImage || cfg.backgroundImage}')`
+        : `url('${cfg.backgroundImage}')`;
+      body.style.setProperty('--bg-image-url', bgUrl);
+      body.style.setProperty('--party-primary',   (loggedIn ? cfg.loggedInPrimaryColor   : cfg.primaryColor)   || '#3B82F6');
+      body.style.setProperty('--party-secondary',  (loggedIn ? cfg.loggedInSecondaryColor : cfg.secondaryColor) || '#8B5CF6');
+      body.style.setProperty('--party-accent',     (loggedIn ? cfg.loggedInAccentColor    : cfg.accentColor)    || '#F59E0B');
+      body.setAttribute('data-template', cfg.templateId || 'classic');
+    };
 
-    body.style.setProperty('--bg-image-url', bgUrl);
-    body.style.setProperty('--party-primary', primary || '#3B82F6');
-    body.style.setProperty('--party-secondary', secondary || '#8B5CF6');
-    body.style.setProperty('--party-accent', accent || '#F59E0B');
+    applyConfig(config, !!user);
 
     if (user) {
       body.classList.add('logged-in-background');
@@ -65,17 +70,28 @@ function EventViewDirector({ config, children }) {
       body.classList.remove('logged-in-background');
     }
 
-    // Apply the selected template as a data attribute so CSS templates can target it
-    body.setAttribute('data-template', config.templateId || 'classic');
+    // When this page is loaded inside the customizer preview iframe (?preview=true),
+    // the parent dashboard sends postMessage({ type: 'preview-update', config: {...} })
+    // on every control change. We apply it immediately without a page reload.
+    const isPreview = new URLSearchParams(window.location.search).get('preview') === 'true';
+    let messageHandler;
+    if (isPreview) {
+      messageHandler = (event) => {
+        if (event.data?.type === 'preview-update' && event.data.config) {
+          applyConfig(event.data.config, !!user);
+        }
+      };
+      window.addEventListener('message', messageHandler);
+    }
 
     return () => {
-      // Restore defaults when leaving the event site
       body.style.removeProperty('--bg-image-url');
       body.style.removeProperty('--party-primary');
       body.style.removeProperty('--party-secondary');
       body.style.removeProperty('--party-accent');
       body.classList.remove('logged-in-background');
       body.removeAttribute('data-template');
+      if (messageHandler) window.removeEventListener('message', messageHandler);
     };
   }, [user, config]);
 

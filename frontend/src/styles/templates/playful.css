@@ -1,0 +1,60 @@
+/*
+ * Playful Template
+ * Bold colors, very rounded corners, bouncy feel.
+ * Fonts: Nunito (rounded letterforms that match the aesthetic) via Google Fonts.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+body[data-template="playful"] {
+  --party-font-family: 'Nunito', 'Arial Rounded MT Bold', system-ui, sans-serif;
+  /* Maximum roundness everywhere */
+  --party-radius-sm: 0.625rem;
+  --party-radius:    0.875rem;
+  --party-radius-md: 1.25rem;
+  --party-radius-lg: 1.75rem;
+  --party-radius-xl: 2.5rem;
+  /* Colourful soft shadows */
+  --party-shadow:    0 4px 12px 0 rgb(0 0 0 / 0.1);
+  --party-shadow-md: 0 8px 24px -2px rgb(0 0 0 / 0.12);
+  --party-shadow-lg: 0 16px 40px -4px rgb(0 0 0 / 0.14);
+
+  font-family: var(--party-font-family);
+  background-color: #FFF5FB;
+  color: #1F2937;
+}
+
+body[data-template="playful"] h1,
+body[data-template="playful"] h2,
+body[data-template="playful"] h3 {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+body[data-template="playful"] .card,
+body[data-template="playful"] .tile {
+  background: white;
+  border-radius: var(--party-radius-xl);
+  box-shadow: var(--party-shadow-md);
+  border: 2px solid #F3E8FF;
+}
+
+body[data-template="playful"] nav {
+  background: white !important;
+  border-bottom: 2px solid #F3E8FF !important;
+}
+
+/* Buttons are very pill-shaped */
+body[data-template="playful"] .btn,
+body[data-template="playful"] button {
+  border-radius: var(--party-radius-xl) !important;
+  font-weight: 800;
+}
+
+/* Slightly bouncy hover on interactive elements */
+body[data-template="playful"] a:hover,
+body[data-template="playful"] button:hover,
+body[data-template="playful"] .btn:hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease;
+}
