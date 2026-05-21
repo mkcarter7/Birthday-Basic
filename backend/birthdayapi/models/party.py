@@ -50,7 +50,7 @@ class Party(models.Model):
     
     @property
     def attending_count(self):
-        return self.rsvps.filter(status='attending').count()
+        return self.rsvps.filter(status='yes').count()
     
     @property
     def is_past(self):
